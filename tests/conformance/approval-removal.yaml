@@ -1,0 +1,2 @@
+deployment:
+  require_approval: false
