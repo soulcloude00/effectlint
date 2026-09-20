@@ -1,7 +1,5 @@
 name: CI
-on:
-  push:
-  pull_request:
+on: [push, pull_request]
 permissions:
   contents: read
 jobs:
@@ -10,8 +8,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+        with: {components: rustfmt, clippy}
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --all-features -- -D warnings
       - run: cargo test --all
+      - name: Conformance smoke tests
+        run: |
+          cargo run -- tests/conformance/scope-expansion-head.yaml --baseline tests/conformance/scope-expansion-base.yaml > findings.json
+          grep -q 'repo:write' findings.json
+          cargo run -- tests/conformance/approval-removal.yaml | grep -q 'approval.bypass'
+  action:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: action}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20, cache: npm, cache-dependency-path: action/package-lock.json}
+      - run: npm ci
+      - run: npm run build
