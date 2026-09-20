@@ -11,6 +11,9 @@ struct Cli {
     /// Output format.
     #[arg(long, value_enum, default_value = "json")]
     format: Format,
+    /// Optional base configuration. When set, emit only capabilities new in INPUT.
+    #[arg(long)]
+    baseline: Option<PathBuf>,
 }
 
 #[derive(Clone, ValueEnum)]
@@ -42,7 +45,7 @@ struct Bom {
     capabilities: Vec<Capability>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 struct Capability {
     server: String,
     effect: &'static str,
@@ -115,7 +118,12 @@ fn sarif(bom: &Bom) -> serde_json::Value {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let bom = scan(&cli.input)?;
+    let mut bom = scan(&cli.input)?;
+    if let Some(baseline) = &cli.baseline {
+        let base = scan(baseline)?;
+        let known: BTreeSet<_> = base.capabilities.into_iter().collect();
+        bom.capabilities.retain(|cap| !known.contains(cap));
+    }
     let output = match cli.format {
         Format::Json => serde_json::to_value(&bom)?,
         Format::Sarif => sarif(&bom),
@@ -128,9 +136,17 @@ fn main() -> Result<()> {
 mod tests {
     use super::*;
     #[test]
+    fn baseline_filter_uses_full_capability_identity() {
+        let a = Capability { server: "one".into(), effect: "network.connect", authority: "a".into(), evidence: "a".into() };
+        let b = Capability { server: "one".into(), effect: "network.connect", authority: "b".into(), evidence: "b".into() };
+        let known: BTreeSet<_> = [a].into_iter().collect();
+        assert!(!known.contains(&b));
+    }
+
+    #[test]
     fn sensitive_names_are_detected() {
         assert!(is_sensitive_env("GITHUB_TOKEN"));
         assert!(is_sensitive_env("db_password"));
         assert!(!is_sensitive_env("LOG_LEVEL"));
     }
-}
+            }
