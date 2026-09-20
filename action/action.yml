@@ -1,0 +1,13 @@
+name: effectlint
+summary: Report newly introduced effects and authority in pull requests
+inputs:
+  config:
+    description: Path to effectlint configuration
+    required: false
+    default: effectlint.yml
+runs:
+  using: node20
+  main: dist/index.js
+branding:
+  icon: shield
+  color: purple
