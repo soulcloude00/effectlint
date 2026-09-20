@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, fs, path::PathBuf};
 
 #[derive(Parser)]
-#[command(version, about = "Emit a capability BOM from an MCP server configuration")]
+#[command(
+    version,
+    about = "Emit a capability BOM from an MCP server configuration"
+)]
 struct Cli {
     /// MCP JSON configuration to scan.
     input: PathBuf,
@@ -67,7 +70,10 @@ fn scan(path: &PathBuf) -> Result<Bom> {
         });
 
         let tokens: BTreeSet<_> = server.args.iter().map(String::as_str).collect();
-        if tokens.iter().any(|arg| arg.starts_with("http://") || arg.starts_with("https://")) {
+        if tokens
+            .iter()
+            .any(|arg| arg.starts_with("http://") || arg.starts_with("https://"))
+        {
             capabilities.push(Capability {
                 server: name.clone(),
                 effect: "network.connect",
@@ -137,8 +143,18 @@ mod tests {
     use super::*;
     #[test]
     fn baseline_filter_uses_full_capability_identity() {
-        let a = Capability { server: "one".into(), effect: "network.connect", authority: "a".into(), evidence: "a".into() };
-        let b = Capability { server: "one".into(), effect: "network.connect", authority: "b".into(), evidence: "b".into() };
+        let a = Capability {
+            server: "one".into(),
+            effect: "network.connect",
+            authority: "a".into(),
+            evidence: "a".into(),
+        };
+        let b = Capability {
+            server: "one".into(),
+            effect: "network.connect",
+            authority: "b".into(),
+            evidence: "b".into(),
+        };
         let known: BTreeSet<_> = [a].into_iter().collect();
         assert!(!known.contains(&b));
     }
@@ -149,4 +165,4 @@ mod tests {
         assert!(is_sensitive_env("db_password"));
         assert!(!is_sensitive_env("LOG_LEVEL"));
     }
-            }
+}
