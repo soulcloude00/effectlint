@@ -1,0 +1,3 @@
+oauth:
+  audience: https://admin.internal.example
+  scopes: [profile]

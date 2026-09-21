@@ -1,0 +1,2 @@
+oauth:
+  scopes: [repo:read, repo:write]

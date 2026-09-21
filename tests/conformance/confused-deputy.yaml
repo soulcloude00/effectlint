@@ -1,0 +1,4 @@
+tools:
+  deploy:
+    service_account: prod-deployer@foreign-project.iam.gserviceaccount.com
+    scopes: [cloud-platform]

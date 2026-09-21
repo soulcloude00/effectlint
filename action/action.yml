@@ -1,13 +1,14 @@
 name: effectlint
 summary: Report newly introduced effects and authority in pull requests
 inputs:
-  config:
-    description: Path to effectlint configuration
-    required: false
-    default: effectlint.yml
+  input: {description: Head agent or deployment config, required: true}
+  baseline: {description: Baseline agent or deployment config, required: true}
+  format: {description: json or sarif, required: false, default: sarif}
+  output: {description: Output file, required: false, default: effectlint.sarif}
+outputs:
+  finding-count: {description: Number of newly introduced authority findings}
+  output: {description: Path to the generated report}
 runs:
   using: node20
   main: dist/index.js
-branding:
-  icon: shield
-  color: purple
+branding: {icon: shield, color: purple}
