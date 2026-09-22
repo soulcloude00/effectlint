@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::{Parser, ValueEnum};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
     collections::BTreeSet,
@@ -22,6 +22,9 @@ struct Cli {
     /// Optional base configuration. Emit only authority new in INPUT.
     #[arg(long)]
     baseline: Option<PathBuf>,
+    /// Optional YAML/JSON policy. Denied findings make the command fail.
+    #[arg(long)]
+    policy: Option<PathBuf>,
 }
 
 #[derive(Clone, ValueEnum)]
@@ -43,6 +46,26 @@ struct Capability {
     effect: String,
     authority: String,
     evidence: String,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct Policy {
+    #[serde(default)]
+    deny_effects: BTreeSet<String>,
+    #[serde(default)]
+    deny_authorities: BTreeSet<String>,
+}
+
+impl Policy {
+    fn load(path: &Path) -> Result<Self> {
+        let value = parse_config(path)?;
+        serde_json::from_value(value).context("parse effectlint policy")
+    }
+
+    fn denies(&self, capability: &Capability) -> bool {
+        self.deny_effects.contains(&capability.effect)
+            || self.deny_authorities.contains(&capability.authority)
+    }
 }
 
 fn parse_config(path: &Path) -> Result<Value> {
@@ -262,11 +285,26 @@ fn main() -> Result<()> {
     if let Some(baseline) = &cli.baseline {
         bom = only_new(bom, scan(baseline)?);
     }
+    let denied: Vec<_> = cli
+        .policy
+        .as_ref()
+        .map(|path| Policy::load(path.as_path()))
+        .transpose()?
+        .map(|policy| {
+            bom.capabilities
+                .iter()
+                .filter(|cap| policy.denies(cap))
+                .collect()
+        })
+        .unwrap_or_default();
     let output = match cli.format {
         Format::Json => serde_json::to_value(&bom)?,
         Format::Sarif => sarif(&bom),
     };
     println!("{}", serde_json::to_string_pretty(&output)?);
+    if !denied.is_empty() {
+        bail!("policy denied {} new authority finding(s)", denied.len());
+    }
     Ok(())
 }
 
