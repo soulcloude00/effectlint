@@ -54,3 +54,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Please report security issues privately 
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
+
+## Policy gates
+
+Use a policy to fail CI only for authority your project forbids:
+
+```sh
+effectlint head.yml --baseline base.yml --policy effectlint.policy.yml
+```
+
+See [`effectlint.policy.example.yml`](effectlint.policy.example.yml). A policy denial still prints the full JSON/SARIF report, then exits non-zero.
+
+## Project guarantees and limits
+
+The versioned BOM schema is in [`schemas/`](schemas/). Read the [threat model](docs/threat-model.md) before treating a clean report as a security signal. Security reports use [private vulnerability reporting](SECURITY.md).
