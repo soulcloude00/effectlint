@@ -1,0 +1,6 @@
+# Any newly introduced capability matching one of these values fails the gate.
+deny_effects:
+  - approval.bypass
+  - tool.untrusted_instructions
+deny_authorities:
+  - cloud-platform
